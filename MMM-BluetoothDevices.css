@@ -1,0 +1,22 @@
+.toothbrushes .toothbrush .toothbrush-circle-container {
+  position: relative;
+  margin: 0 auto;
+  width: 120px;
+  height: 120px;
+}
+
+.toothbrushes .toothbrush .toothbrush-circle-container .toothbrush-circle-text {
+  position: absolute;
+  top: 35px;
+  width: 100%;
+}
+
+.toothbrushes .toothbrush .toothbrush-circle-container .toothbrush-circle-ring {
+
+}
+
+.toothbrushes .toothbrush .toothbrush-circle-container .toothbrush-circle-ring .toothbrush-circle {
+  transition: 0.35s stroke-dashoffset;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}

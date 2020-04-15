@@ -1,0 +1,33 @@
+{
+  "name": "mmm-bluetoothdevices",
+  "version": "0.0.1",
+  "description": "Magic mirror module for bluetooth devices",
+  "main": "MMM-BluetoothDevices.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/timodejong95/MMM-BluetoothDevices.git"
+  },
+  "scripts": {
+    "lint": "eslint --ext .js --ignore-path .gitignore .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "magic",
+    "mirror",
+    "2",
+    "module",
+    "bluetooth",
+    "oralb"
+  ],
+  "author": "Timo de Jong",
+  "license": "MIT",
+  "dependencies": {
+    "dbus-native": "^0.4.0"
+  },
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.1.0",
+    "eslint-plugin-import": "^2.20.1",
+    "minimist": "^1.2.5"
+  }
+}
