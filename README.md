@@ -34,12 +34,15 @@ If your running MagicMirror in [docker](https://docs.magicmirror.builders/gettin
 - /etc/dbus-1/system.d/MMM.conf:/etc/dbus-1/system.d/MMM.conf
 
 ## Configuration
+
+### Example
 | Key                       | Type    | Default                          | Description                                                                  |
 | ---                       | ---     | ---                              | ---                                                                          |
 | name                      | String  | `raspberrypi`                    | the name for the running bluetooth adapter                                   |
 | mode                      | String  | `le`                             |                                                                              |
 | hci                       | String  | `hci0`                           | which hci adapter to use, run `hciconfig` to see your available hci adapters |
 | interfaceName             | String  | `org.bluez.Adapter1`             | the bluetooth adapter name to take                                           |
+| hideAfter                 | Number  | `600`                            | the time in seconds when a device should hide                                |
 | debugLogs                 | Boolean | `false`                          | enable debug logging                                                         |
 | services                  | Array   | `{ type: "CurrentTimeService" }` | bluetooth GATT services                                                      |
 | services.type             | String  |                                  | the service name, see [services](#services)                                  |
@@ -48,18 +51,20 @@ If your running MagicMirror in [docker](https://docs.magicmirror.builders/gettin
 | devices[].type            | String  |                                  | the device name, see [devices](#devices)                                     |
 | devices[].name            | String  |                                  | the name for the devices, can be used in `layout.data.fields`                |
 | devices[].mac             | String  |                                  | the device bluetooth mac                                                     |
+| devices[].format          | String  |                                  | the device format, see [devices format](#devices)                            |
 | devices[].tracks          | Array   | `[]`                             | custom devices tracks                                                        |
-| devices[].tracks[]        | String  |                                  | the track key, see [devices](#devices)                                       |
+| devices[].tracks[]        | String  |                                  | the track key, see [devices tracks](#devices)                                |
 | layout                    | Object  |                                  |                                                                              |
 | layout.title              | Object  |                                  |                                                                              |
 | layout.title.position     | String  | `bottom`                         | either `top` or `bottom`                                                     |
-| layout.title.key          | String  | `name`                           | the key of the [device data](#device-data) to show                           |
+| layout.title.key          | String  | `name`                           | the key of the [device data](#devices) to show                               |
 | layout.data               | Object  |                                  |                                                                              |
 | layout.data.position      | String  | `bottom`                         | either `top` or `bottom`                                                     |
 | layout.data.fields        | Array   | `{ key: "mode", text: "mode" }`  | the custom fields                                                            |
 | layout.data.fields[]      | Object  |                                  | a custom field                                                               |
 | layout.data.fields[].key  | String  |                                  | the label                                                                    |
-| layout.data.fields[].text | String  |                                  | the key of the [device data](#device-data) to show                           |
+| layout.data.fields[].text | String  |                                  | the key of the [device data](#devices) to show                               |
+
 ### Example
 ```
 {
@@ -75,12 +80,10 @@ If your running MagicMirror in [docker](https://docs.magicmirror.builders/gettin
 
 ### Devices
  - OralBToothbrush
- 
-### Device data
 
-### Oral-B Toothbrush
+#### Oral-B Toothbrush
 
-#### Data
+##### Data
 | Key      | Type   |
 | ---      | ---    |
 | state    | String |
@@ -90,10 +93,16 @@ If your running MagicMirror in [docker](https://docs.magicmirror.builders/gettin
 | sector   | String |
 | battery  | Int    |
 
-#### Tracks
-| Key     | Description                                                                                                                                                                          |
-| ---     | ---                                                                                                                                                                                  |
-| Battery | Can only be fetched when connected (device auto disconnect after ~20 seconds). So we got data when starting up and we try to reconnect in the first 10 seconds of your brush session |
+##### Format
+| Key       | Description |
+| ---       | ---         |
+| counter   | time        |
+| formatted | M:SS        |
+
+##### Tracks
+| Key     | Description                                                                                                                                                                           |
+| ---     | ---                                                                                                                                                                                   |
+| Battery | Can only be fetched when connected (device auto disconnect after ~20 seconds). So we got data when starting up and we try to reconnect in the first 10 seconds of your brush session. |
 
 ### Services
  - CurrentTimeService

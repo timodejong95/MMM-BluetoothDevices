@@ -13,6 +13,8 @@ Module.register('MMM-BluetoothDevices', {
     debugLogs: false,
     devices: [],
     layout: {
+      format: 'counter',
+      hideAfter: 600,
       title: {
         position: 'bottom',
         key: 'name',
@@ -37,7 +39,7 @@ Module.register('MMM-BluetoothDevices', {
 
     if (this.loading) {
       wrapper.innerHTML = 'Loading...';
-      wrapper.className = 'dimmed light small';
+      wrapper.className = 'light small';
 
       return wrapper;
     }
@@ -65,6 +67,7 @@ Module.register('MMM-BluetoothDevices', {
     const device = this.devices[deviceKey];
     const deviceTd = document.createElement('td');
     deviceTd.classList.add('toothbrush');
+    deviceTd.style.textAlign = 'center';
 
     const deviceCircle = document.createElement('div');
     deviceCircle.classList.add('toothbrush-circle-container');
@@ -80,8 +83,7 @@ Module.register('MMM-BluetoothDevices', {
 
     const deviceCircleSvgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     deviceCircleSvgCircle.classList.add('toothbrush-circle');
-    deviceCircleSvgCircle.setAttribute('stroke', '#444');
-    deviceCircleSvgCircle.setAttribute('stroke-width', 4);
+    deviceCircleSvgCircle.setAttribute('stroke-width', 10);
     deviceCircleSvgCircle.setAttribute('fill', 'transparent');
     deviceCircleSvgCircle.setAttribute('r', 52);
     deviceCircleSvgCircle.setAttribute('cx', 60);
@@ -91,11 +93,21 @@ Module.register('MMM-BluetoothDevices', {
     deviceCircle.append(deviceCircleSvg);
     deviceCircle.append(deviceCircleText);
 
-    const time = device.data.time > 120 ? 120 : device.data.time;
+    const time = device.data.time;
+
+    // stop previous hider
+    if (this.hiders.hasOwnProperty(deviceKey)) {
+      clearInterval(this.hiders[deviceKey]);
+    }
+
     // initial start
-    this.updateCircle(deviceCircleSvgCircle, deviceCircleText, time);
+    this.updateCircle(deviceCircleSvgCircle, deviceCircleText, device, time);
 
     if (device.data.state === 'running') {
+      deviceTd.style.display = 'block';
+      deviceCircleText.classList.add('bright');
+      deviceCircleSvgCircle.setAttribute('stroke', '#0080fe');
+
       this.counters[deviceKey] = {
         time,
         interval: setInterval(() => {
@@ -108,10 +120,20 @@ Module.register('MMM-BluetoothDevices', {
           this.updateCircle(
             deviceCircleSvgCircle,
             deviceCircleText,
+            device,
             this.counters[deviceKey].time,
           );
         }, 1000),
       };
+    } else {
+      deviceCircleText.classList.remove('bright');
+      deviceCircleSvgCircle.setAttribute('stroke', '#aaa');
+
+      const hideAfter = this.config.layout.hideAfter || this.defaults.layout.hideAfter;
+
+      this.hiders[deviceKey] = setInterval(() => {
+        deviceTd.style.display = 'none';
+      }, hideAfter * 1000);
     }
 
     const deviceLabel = document.createElement('div');
@@ -148,8 +170,10 @@ Module.register('MMM-BluetoothDevices', {
     return deviceTd;
   },
 
-  updateCircle(deviceCircleSvgCircle, deviceCircleText, time) {
-    deviceCircleText.innerText = time;
+  updateCircle(deviceCircleSvgCircle, deviceCircleText, device, time) {
+    deviceCircleText.innerText = this.formatTime(device, time);
+
+    if (time > 120) { time = 120; }
 
     const radius = parseInt(deviceCircleSvgCircle.getAttribute('r'));
     const circumference = radius * 2 * Math.PI;
@@ -159,11 +183,24 @@ Module.register('MMM-BluetoothDevices', {
     deviceCircleSvgCircle.style.strokeDashoffset = offset;
   },
 
+  formatTime(device, time) {
+    switch (device.device.format) {
+      case 'formatted':
+          const secs = time % 60;
+          return `${Math.floor(time / 60)}:${secs < 10 ? `0${secs}` : secs}`;
+
+      case 'counter':
+      default:
+        return time;
+    }
+  },
+
   start() {
     Log.info(`Starting module: ${this.name}`);
 
     this.devices = {};
     this.counters = {};
+    this.hiders = {};
     this.loading = true;
 
     this.sendSocketNotification('FETCH_TOOTHBRUSHES', this.config);

@@ -14,7 +14,7 @@ const service = bus.getService('org.bluez');
  * @returns {Dongle}
  */
 module.exports.initialize = (moduleName, config) => {
-  const logger = new Logger(moduleName, config.debugLogs);
+  const logger = new Logger(moduleName, config.debugLogs || false);
   const dongle = new Dongle(config, logger);
 
   dongle.setup(bus, service)
