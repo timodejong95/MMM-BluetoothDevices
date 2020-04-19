@@ -21,6 +21,7 @@ module.exports.initialize = (moduleName, config) => {
     .catch((exception) => {
       logger.error('unhandled exception:');
       logger.error(exception);
+      logger.error(JSON.stringify(exception));
     });
 
   return dongle;

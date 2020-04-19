@@ -63,18 +63,16 @@ class Device extends Eventable {
    */
   connect(iFace, maxTries) {
     this.iFace = iFace;
-    let tries = 1;
+    let tries = 0;
 
     const tryConnect = () => new Promise((resolve, reject) => {
-      if (tries <= maxTries) {
+      if (tries < maxTries) {
+        tries += 1;
         this.logger.log(`trying to connect to: ${this.name} ${tries}/${maxTries}`);
 
         connect()
           .then((response) => resolve(response))
-          .catch((exception) => {
-            tries += 1;
-            reject(exception);
-          });
+          .catch((exception) => reject(exception));
       } else {
         reject(new UnknownError({
           troubleshooting: 'devices#could-not-connect',
@@ -88,6 +86,8 @@ class Device extends Eventable {
 
     const connect = () => new Promise((resolve, reject) => {
       iFace.Connect((exception) => {
+        exception = Array.isArray(exception) ? exception.join('.') : exception;
+
         if (exception) {
           if (exception === 'Software caused connection abort') {
             tryConnect()

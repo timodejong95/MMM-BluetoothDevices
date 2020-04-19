@@ -87,6 +87,8 @@ class Dongle extends Eventable {
   stopDiscovery(adapter) {
     return new Promise((resolve, reject) => {
       adapter.StopDiscovery((exception) => {
+        exception = Array.isArray(exception) ? exception.join('.') : exception;
+
         if (exception) {
           if (exception === 'No discovery started') {
             resolve(adapter);
