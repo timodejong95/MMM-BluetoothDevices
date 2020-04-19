@@ -22,7 +22,8 @@
   "author": "Timo de Jong",
   "license": "MIT",
   "dependencies": {
-    "dbus-native": "^0.4.0"
+    "dbus-native": "git+https://github.com/sidorares/dbus-native.git",
+    "xml2js": "^0.4.23"
   },
   "devDependencies": {
     "eslint": "^6.8.0",

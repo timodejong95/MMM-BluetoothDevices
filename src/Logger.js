@@ -3,9 +3,11 @@
 class Logger {
   /**
    * @param {string} prefix
+   * @param {boolean} debugLogs
    */
-  constructor(prefix) {
+  constructor(prefix, debugLogs) {
     this.prefix = prefix;
+    this.debugLogs = debugLogs;
   }
 
   /**
@@ -26,7 +28,9 @@ class Logger {
    * @param {string} log
    */
   debug(log) {
-    console.debug(`${this.prefix} ${log}`);
+    if (this.debugLogs) {
+      console.log(`${this.prefix} ${log}`);
+    }
   }
 
   /**

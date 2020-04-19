@@ -10,6 +10,7 @@ Module.register('MMM-BluetoothDevices', {
     services: [
       { type: 'CurrentTimeService' },
     ],
+    debugLogs: false,
     devices: [],
     layout: {
       title: {

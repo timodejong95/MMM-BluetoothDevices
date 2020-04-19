@@ -1,14 +1,17 @@
 'use strict';
 
 const UnknownError = require('../errors/UnknownError');
+const Logger = require('../Logger');
 
 class CurrentTimeService {
   /**
+   * @param {Logger} logger
    * @param {object} options
    * @param {string} options.hci
    * @param {string|null} options.serviceName
    */
-  constructor(bus, service, options) {
+  constructor(logger, bus, service, options) {
+    this.logger = logger;
     this.bus = bus;
     this.service = service;
     this.hci = options.hci;
@@ -33,7 +36,7 @@ class CurrentTimeService {
           output.writeInt8(Math.floor(now.getMilliseconds() / 256), 8);
 
           if (Array.isArray(value) && Array.isArray(value[0]) && value[0][0] === 'device' && Array.isArray(value[0][1])) {
-            //
+            this.logger.debug(`current time service request from ${options[0][1][1]}. response: ${output.toString('hex')}`);
           }
 
           return output;
@@ -108,14 +111,12 @@ class CurrentTimeService {
   initialize() {
     return new Promise((resolve, reject) => {
       this.bus.requestName(this.serviceName, 0x4, (exception, retCode) => {
-        exception = Array.isArray(exception) ? exception.join('.') : exception;
-
         if (exception) {
           reject(exception);
         } else if (retCode !== 1) {
           reject(new Error(`Failed with returnCode ${retCode}`));
         } else {
-          this.service.getInterface(this.pathRoot, 'org.bluez.GattManager1', (error, gattMgrIface) => {
+          this.service.getInterface(this.pathRoot, 'org.bluez.GattManager1', (error, gattManagerInterface) => {
             error = Array.isArray(error) ? error.join('.') : error;
 
             if (error) {
@@ -124,9 +125,9 @@ class CurrentTimeService {
                 exception: new Error(`Failed to fetch org.bluez.GattManager1 for hci: ${this.hci}`),
               }));
             } else {
-              this.gattMgrIface = gattMgrIface;
+              this.gattManagerInterface = gattManagerInterface;
 
-              this.gattMgrIface.RegisterApplication(this.serviceNameInDBusNotation, [], (e) => {
+              this.gattManagerInterface.RegisterApplication(this.serviceNameInDBusNotation, [], (e) => {
                 e = Array.isArray(e) ? e.join('.') : e;
 
                 if (e) {
@@ -135,7 +136,7 @@ class CurrentTimeService {
                     exception: e,
                   }));
                 } else {
-                  resolve(true);
+                  resolve();
                 }
               });
             }
@@ -147,9 +148,7 @@ class CurrentTimeService {
 
   destroy() {
     return new Promise((resolve, reject) => {
-      this.gattMgrIface.UnregisterApplication(this.serviceNameInDBusNotation, (exception) => {
-        exception = Array.isArray(exception) ? exception.join('.') : exception;
-
+      this.gattManagerInterface.UnregisterApplication(this.serviceNameInDBusNotation, (exception) => {
         if (exception) {
           reject(new UnknownError({
             troubleshooting: 'services#destroy',

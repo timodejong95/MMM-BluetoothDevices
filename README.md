@@ -34,31 +34,32 @@ If your running MagicMirror in [docker](https://docs.magicmirror.builders/gettin
 - /etc/dbus-1/system.d/MMM.conf:/etc/dbus-1/system.d/MMM.conf
 
 ## Configuration
-
-| Key                       | Type   | Default                          | Description                                                                  |
-| ---                       | ---    | ---                              | ---                                                                          |
-| name                      | String | `raspberrypi`                    | the name for the running bluetooth adapter                                   |
-| mode                      | String | `le`                             |                                                                              |
-| hci                       | String | `hci0`                           | which hci adapter to use, run `hciconfig` to see your available hci adapters |
-| interfaceName             | String | `org.bluez.Adapter1`             | the bluetooth adapter name to take                                           |
-| services                  | Array  | `{ type: "CurrentTimeService" }` | bluetooth GATT services                                                      |
-| services.type             | String |                                  | the service name, see [services](#services)                                  |
-| devices                   | Array  | `[]`                             | the bluetooth devices                                                        |
-| devices[]                 | Object |                                  | a bluetooth device                                                           |
-| devices[].type            | String |                                  | the device name, see [devices](#devices)                                     |
-| devices[].name            | String |                                  | the name for the devices, can be used in `layout.data.fields`                |
-| devices[].mac             | String |                                  | the device bluetooth mac                                                     |
-| layout                    | Object |                                  |                                                                              |
-| layout.title              | Object |                                  |                                                                              |
-| layout.title.position     | String | `bottom`                         | either `top` or `bottom`                                                     |
-| layout.title.key          | String | `name`                           | the key of the [device data](#device-data) to show                           |
-| layout.data               | Object |                                  |                                                                              |
-| layout.data.position      | String | `bottom`                         | either `top` or `bottom`                                                     |
-| layout.data.fields        | Array  | `{ key: "mode", text: "mode" }`  | the custom fields                                                            |
-| layout.data.fields[]      | Object |                                  | a custom field                                                               |
-| layout.data.fields[].key  | String |                                  | the label                                                                    |
-| layout.data.fields[].text | String |                                  | the key of the [device data](#device-data) to show                           |
-
+| Key                       | Type    | Default                          | Description                                                                  |
+| ---                       | ---     | ---                              | ---                                                                          |
+| name                      | String  | `raspberrypi`                    | the name for the running bluetooth adapter                                   |
+| mode                      | String  | `le`                             |                                                                              |
+| hci                       | String  | `hci0`                           | which hci adapter to use, run `hciconfig` to see your available hci adapters |
+| interfaceName             | String  | `org.bluez.Adapter1`             | the bluetooth adapter name to take                                           |
+| debugLogs                 | Boolean | `false`                          | enable debug logging                                                         |
+| services                  | Array   | `{ type: "CurrentTimeService" }` | bluetooth GATT services                                                      |
+| services.type             | String  |                                  | the service name, see [services](#services)                                  |
+| devices                   | Array   | `[]`                             | the bluetooth devices                                                        |
+| devices[]                 | Object  |                                  | a bluetooth device                                                           |
+| devices[].type            | String  |                                  | the device name, see [devices](#devices)                                     |
+| devices[].name            | String  |                                  | the name for the devices, can be used in `layout.data.fields`                |
+| devices[].mac             | String  |                                  | the device bluetooth mac                                                     |
+| devices[].tracks          | Array   | `[]`                             | custom devices tracks                                                        |
+| devices[].tracks[]        | String  |                                  | the track key, see [devices](#devices)                                       |
+| layout                    | Object  |                                  |                                                                              |
+| layout.title              | Object  |                                  |                                                                              |
+| layout.title.position     | String  | `bottom`                         | either `top` or `bottom`                                                     |
+| layout.title.key          | String  | `name`                           | the key of the [device data](#device-data) to show                           |
+| layout.data               | Object  |                                  |                                                                              |
+| layout.data.position      | String  | `bottom`                         | either `top` or `bottom`                                                     |
+| layout.data.fields        | Array   | `{ key: "mode", text: "mode" }`  | the custom fields                                                            |
+| layout.data.fields[]      | Object  |                                  | a custom field                                                               |
+| layout.data.fields[].key  | String  |                                  | the label                                                                    |
+| layout.data.fields[].text | String  |                                  | the key of the [device data](#device-data) to show                           |
 ### Example
 ```
 {
@@ -78,6 +79,8 @@ If your running MagicMirror in [docker](https://docs.magicmirror.builders/gettin
 ### Device data
 
 ### Oral-B Toothbrush
+
+#### Data
 | Key      | Type   |
 | ---      | ---    |
 | state    | String |
@@ -85,6 +88,12 @@ If your running MagicMirror in [docker](https://docs.magicmirror.builders/gettin
 | time     | Int    |
 | mode     | String |
 | sector   | String |
+| battery  | Int    |
+
+#### Tracks
+| Key     | Description                                                                                                                                                                          |
+| ---     | ---                                                                                                                                                                                  |
+| Battery | Can only be fetched when connected (device auto disconnect after ~20 seconds). So we got data when starting up and we try to reconnect in the first 10 seconds of your brush session |
 
 ### Services
  - CurrentTimeService
@@ -98,6 +107,8 @@ When occurring exceptions, that are thrown by the module, there is a `troublesho
 | services#invalid-adapter<br>dongle#interface         | make sure your hci adapter is configure correctly, run `hciconfig` to see which hci adapters are available               |
 | devices#could-not-connect<br>dongle#device-interface | make sure your bluetooth mac is correct, device is on and ready for pairing when the node_helper is triggered            |
 | devices#connect-error                                | -                                                                                                                        |
+| devices#resolve-services                             | -                                                                                                                        |
+| devices#characteristics                              | -                                                                                                                        |
 | dongle#stop-discovery                                | you might have re-started the magic-mirror to many times in a short period, please wait 30 seconds before the next start |
 | dongle#start-discovery-filter                        | -                                                                                                                        |
 | dongle#start-discovery                               | -                                                                                                                        |

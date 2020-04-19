@@ -1,6 +1,8 @@
 'use strict';
 
 const Device = require('../Device');
+const Logger = require('../Logger');
+const UnknownError = require('../errors/UnknownError');
 
 const SECTORS = {
   1: 'sector_1',
@@ -48,44 +50,149 @@ const MODES = {
 
 class OralBToothbrush extends Device {
   /**
+   * @param {object} options
+   * @param {string} options.name
+   * @param {string} options.mac
+   * @param {Logger} logger
+   */
+  constructor(options, logger) {
+    super(options, logger);
+
+    this.BATTERY_TRACK_KEY = 'battery';
+    this.BATTERY_UUID = 'a0f0ff05-5047-4d53-8208-4f72616c2d42';
+    this.BATTERY_SERVICE = 'service001e';
+    this.BATTERY_CHARACTERISTIC = 'char002c';
+    this.BATTERY_SERVICE_PATH = `${this.BATTERY_SERVICE}/${this.BATTERY_CHARACTERISTIC}`;
+
+    if (this.tracks.includes(this.BATTERY_TRACK_KEY)) {
+      this.services = [this.BATTERY_SERVICE];
+      this.characteristics = [this.BATTERY_CHARACTERISTIC];
+    }
+
+    this.reconnecting = false;
+    this.data = {
+      status: null,
+      state: null,
+      rssi: null,
+      pressure: null,
+      time: null,
+      mode: null,
+      sector: null,
+      battery: null,
+    };
+  }
+
+  /**
    * @param {array} props
    * @param {buffer} props.ManufacturerData
    */
   handleAdvertisingForDevice(props) {
     if (props.ManufacturerData) {
-      const parsedData = this.parseData(props.ManufacturerData);
+      const data = props.ManufacturerData;
 
-      this.emit('update', {
-        status: parsedData.state > 0 ? 'online' : 'offline',
-        state: STATES[parsedData.state],
-        rssi: props.RSSI,
-        pressure: parsedData.pressure,
-        time: parsedData.time,
-        mode: MODES[parsedData.mode],
-        sector: SECTORS[parsedData.sector],
-      });
+      this.data.status = data[3] > 0 ? 'online' : 'offline';
+      this.data.state = STATES[data[3]];
+      this.data.rssi = props.RSSI;
+      this.data.pressure = data[4];
+      this.data.time = data[5] * 60 + data[6];
+      this.data.mode = MODES[data[7]];
+      this.data.sector = SECTORS[data[8]];
+
+      this.emit('update', this.data);
+
+      if (this.shouldReconnect()) {
+        this.reconnecting = true;
+        this.logger.debug('reconnecting');
+
+        this.connect(this.iFace, 1)
+          .then(() => this.watchCharacteristics())
+          .then(() => { this.reconnecting = false; })
+          .catch(() => { this.reconnecting = false; });
+      }
     }
+  }
+
+  shouldReconnect() {
+    return this.tracks.includes(this.BATTERY_TRACK_KEY)
+        && this.iFace
+        && !this.connected // only if the devices is not connected
+        && this.data.time < 10 // only at the beginning of the brush session
+        && this.initialized
+        && !this.reconnecting;
   }
 
   /**
    * @param {array} props
    */
   handleNotificationForDevice(props) {
-    this.logger.log('handleNotificationForDevice', props);
+    if (props.hasOwnProperty(this.BATTERY_SERVICE_PATH)) {
+      this.data.battery = props[this.BATTERY_SERVICE_PATH][0];
+
+      this.emit('update', this.data);
+    }
   }
 
-  /**
-   * @param {buffer} data
-   * @returns {{mode: string, state: string, pressure: string, time: string, sector: string}}
-   */
-  parseData(data) {
-    return {
-      state: data[3],
-      pressure: data[4],
-      time: data[5] * 60 + data[6],
-      mode: data[7],
-      sector: data[8],
-    };
+  watchCharacteristics() {
+    return new Promise((resolve, reject) => {
+      if (!this.tracks.includes(this.BATTERY_TRACK_KEY)) {
+        return resolve();
+      }
+
+      if (this.characteristicsByUUID.hasOwnProperty(this.BATTERY_UUID)) {
+        const characteristicsInterface = this.characteristicsByUUID[this.BATTERY_UUID];
+
+        // Enable notifications
+        characteristicsInterface.Notifying((err, notifying) => {
+          if (notifying === false) {
+            characteristicsInterface.StartNotify(() => {
+              characteristicsInterface.ReadValue({}, (exception, value) => {
+                if (exception) {
+                  reject(new UnknownError({
+                    troubleshooting: 'devices#characteristics',
+                    exception: new Error(exception),
+                    extra: {
+                      device: this,
+                    },
+                  }));
+                } else {
+                  this.data.battery = value[0];
+                  this.emit('update', this.data);
+                  resolve();
+                }
+              });
+            });
+          } else {
+            resolve();
+          }
+        });
+      } else {
+        reject(new UnknownError({
+          troubleshooting: 'devices#characteristics',
+          exception: new Error('battery characteristics not found'),
+          extra: {
+            device: this,
+          },
+        }));
+      }
+    });
+  }
+
+  destroy() {
+    return new Promise((resolve, reject) => {
+      if (this.characteristicsByUUID.hasOwnProperty(this.BATTERY_UUID)) {
+        const characteristicsInterface = this.characteristicsByUUID[this.BATTERY_UUID];
+
+        characteristicsInterface.Notifying((err, notifying) => {
+          if (notifying === true) {
+            characteristicsInterface.StopNotify((err) => {
+              resolve();
+            });
+          } else {
+            resolve();
+          }
+        });
+      }
+    }).then(() => super.destroy());
   }
 }
 

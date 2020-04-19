@@ -17,5 +17,5 @@ module.exports.initialize = (options, logger) => {
     return new devices[options.type](options, logger);
   }
 
-  throw new Error(`Unknown device: ${options.type}`);
+  throw new Error(`unknown device: ${options.type}`);
 };
