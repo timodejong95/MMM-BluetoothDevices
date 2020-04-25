@@ -175,7 +175,7 @@ class Dongle extends Eventable {
             this.logger.debug(`unhandled device msg: ${JSON.stringify(message)}`);
           }
 
-          this.devices.map((device) => device.update(message.body[0], dev, props));
+          this.devices.forEach((device) => device.update(message.body[0], dev, props));
         } else if (message.body[0] === 'org.bluez.GattCharacteristic1') {
           const splitPath = message.path.split('/');
           const dev = splitPath[4];
@@ -187,7 +187,7 @@ class Dongle extends Eventable {
 
             props[characteristic] = value;
 
-            this.devices.map((device) => device.update(message.body[0], dev, props));
+            this.devices.forEach((device) => device.update(message.body[0], dev, props));
           }
         } else if (message && Array.isArray(message.body) && message.body[0] === 'org.bluez.Adapter1') {
           if (JSON.stringify(message).includes('["Powered",[[{"type":"b","child":[]}],[false]]]')) {
@@ -210,7 +210,7 @@ class Dongle extends Eventable {
     const promises = [];
 
     for (const device of this.devices) {
-      promises.push(device.initialize(this.service, this.path, 2));
+      promises.push(device.initialize(this.service, this.path, 3));
     }
 
     return Promise.all(promises);

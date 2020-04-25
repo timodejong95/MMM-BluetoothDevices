@@ -93,7 +93,7 @@ Module.register('MMM-BluetoothDevices', {
     deviceCircle.append(deviceCircleSvg);
     deviceCircle.append(deviceCircleText);
 
-    const time = device.data.time;
+    const { time } = device.data;
 
     // stop previous hider
     if (this.hiders.hasOwnProperty(deviceKey)) {
@@ -186,8 +186,8 @@ Module.register('MMM-BluetoothDevices', {
   formatTime(device, time) {
     switch (device.device.format) {
       case 'formatted':
-          const secs = time % 60;
-          return `${Math.floor(time / 60)}:${secs < 10 ? `0${secs}` : secs}`;
+        const secs = time % 60;
+        return `${Math.floor(time / 60)}:${secs < 10 ? `0${secs}` : secs}`;
 
       case 'counter':
       default:

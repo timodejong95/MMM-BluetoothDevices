@@ -1,6 +1,7 @@
 'use strict';
 
 const dbus = require('dbus-native');
+const safeStringify = require('fast-safe-stringify');
 const Dongle = require('./Dongle');
 const Logger = require('./Logger');
 
@@ -21,7 +22,7 @@ module.exports.initialize = (moduleName, config) => {
     .catch((exception) => {
       logger.error('unhandled exception:');
       logger.error(exception);
-      logger.error(JSON.stringify(exception));
+      logger.error(safeStringify(exception));
     });
 
   return dongle;

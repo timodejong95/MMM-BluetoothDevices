@@ -3,7 +3,9 @@ module.exports = {
   globals: {
     Module: true,
     Log: true,
-    MM: true
+    MM: true,
+    describe: true,
+    it: true
   },
   parserOptions: {
     sourceType: "script"
@@ -16,4 +18,4 @@ module.exports = {
     node: true,
     es6: true
   }
-}
+};

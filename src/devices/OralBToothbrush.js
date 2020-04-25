@@ -62,11 +62,11 @@ class OralBToothbrush extends Device {
     this.BATTERY_UUID = 'a0f0ff05-5047-4d53-8208-4f72616c2d42';
     this.BATTERY_SERVICE = 'service001e';
     this.BATTERY_CHARACTERISTIC = 'char002c';
-    this.BATTERY_SERVICE_PATH = `${this.BATTERY_SERVICE}/${this.BATTERY_CHARACTERISTIC}`;
+    this.BATTERY_PATH = `${this.BATTERY_SERVICE}/${this.BATTERY_CHARACTERISTIC}`;
 
     if (this.tracks.includes(this.BATTERY_TRACK_KEY)) {
-      this.services = [this.BATTERY_SERVICE];
-      this.characteristics = [this.BATTERY_CHARACTERISTIC];
+      this.services.push(this.BATTERY_SERVICE);
+      this.characteristics.push(this.BATTERY_CHARACTERISTIC);
     }
 
     this.reconnecting = false;
@@ -87,6 +87,8 @@ class OralBToothbrush extends Device {
    * @param {buffer} props.ManufacturerData
    */
   handleAdvertisingForDevice(props) {
+    super.handleAdvertisingForDevice(props);
+
     if (props.ManufacturerData) {
       const data = props.ManufacturerData;
 
@@ -102,12 +104,15 @@ class OralBToothbrush extends Device {
 
       if (this.shouldReconnect()) {
         this.reconnecting = true;
-        this.logger.debug('reconnecting');
+        this.logger.info(`reconnecting to: ${this.name}`);
 
         this.connect(this.iFace, 1)
-          .then(() => this.watchCharacteristics())
           .then(() => { this.reconnecting = false; })
-          .catch(() => { this.reconnecting = false; });
+          .catch((exception) => {
+            this.reconnecting = false;
+            this.logger.info(`failed to reconnect to: ${this.name}`);
+            this.logger.debug(exception);
+          });
       }
     }
   }
@@ -116,7 +121,7 @@ class OralBToothbrush extends Device {
     return this.tracks.includes(this.BATTERY_TRACK_KEY)
         && this.iFace
         && !this.connected // only if the devices is not connected
-        && this.data.time < 10 // only at the beginning of the brush session
+        && this.data.time < 5 // only at the beginning of the brush session
         && this.initialized
         && !this.reconnecting;
   }
@@ -125,15 +130,18 @@ class OralBToothbrush extends Device {
    * @param {array} props
    */
   handleNotificationForDevice(props) {
-    if (props.hasOwnProperty(this.BATTERY_SERVICE_PATH)) {
-      this.data.battery = props[this.BATTERY_SERVICE_PATH][0];
+    super.handleNotificationForDevice(props);
+
+    if (props.hasOwnProperty(this.BATTERY_PATH)) {
+      this.data.battery = props[this.BATTERY_PATH][0];
+      this.logger.debug(`battery updated to: ${this.data.battery}% for: ${this.name}`);
 
       this.emit('update', this.data);
     }
   }
 
   watchCharacteristics() {
-    return new Promise((resolve, reject) => {
+    super.watchCharacteristics().then(() => new Promise((resolve, reject) => {
       if (!this.tracks.includes(this.BATTERY_TRACK_KEY)) {
         return resolve();
       }
@@ -174,19 +182,17 @@ class OralBToothbrush extends Device {
           },
         }));
       }
-    });
+    }));
   }
 
   destroy() {
     return new Promise((resolve, reject) => {
-      if (this.characteristicsByUUID.hasOwnProperty(this.BATTERY_UUID)) {
+      if (this.initialized && this.characteristicsByUUID.hasOwnProperty(this.BATTERY_UUID)) {
         const characteristicsInterface = this.characteristicsByUUID[this.BATTERY_UUID];
 
         characteristicsInterface.Notifying((err, notifying) => {
           if (notifying === true) {
-            characteristicsInterface.StopNotify((err) => {
-              resolve();
-            });
+            characteristicsInterface.StopNotify(() => resolve());
           } else {
             resolve();
           }
