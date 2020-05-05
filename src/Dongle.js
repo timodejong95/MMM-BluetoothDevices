@@ -2,14 +2,13 @@
 
 const devices = require('./devices');
 const Eventable = require('./Eventable');
-const Logger = require('./Logger');
 const UnknownError = require('./errors/UnknownError');
 const CurrentTimeService = require('./services/CurrentTimeService');
 
 class Dongle extends Eventable {
   /**
    * @param {object} options
-   * @param {Logger} logger
+   * @param {import('Logger')} logger
    */
   constructor(options, logger) {
     super();
@@ -51,7 +50,6 @@ class Dongle extends Eventable {
         .then(() => resolve(this))
         .catch((exception) => reject(exception));
     });
-    navigator.bluetooth;
   }
 
   async destroy() {
@@ -61,7 +59,12 @@ class Dongle extends Eventable {
 
   setupServices(bus) {
     return new Promise((resolve, reject) => {
-      this.currentTimeService = new CurrentTimeService(this.logger, bus, this.service, { hci: this.hci });
+      this.currentTimeService = new CurrentTimeService(
+        this.logger,
+        bus,
+        this.service,
+        { hci: this.hci },
+      );
 
       this.currentTimeService.initialize()
         .then(() => resolve())

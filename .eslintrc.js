@@ -11,7 +11,16 @@ module.exports = {
     sourceType: "script"
   },
   rules: {
-    strict: ["error", "global"]
+    strict: ["error", "global"],
+    radix: "off",
+    "no-async-promise-executor": "off",
+    "no-mixed-operators": "off",
+    "no-case-declarations": "off",
+    "class-methods-use-this": "off",
+    "prefer-destructuring": "off",
+    "guard-for-in": "off",
+    "no-param-reassign": "off",
+    "no-restricted-syntax": "off",
   },
   env: {
     browser: true,

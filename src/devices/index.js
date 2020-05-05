@@ -1,7 +1,6 @@
 'use strict';
 
 const OralBToothbrush = require('./OralBToothbrush');
-const Logger = require('../Logger');
 
 const devices = {
   OralBToothbrush,
@@ -10,7 +9,7 @@ const devices = {
 /**
  * @param {object} options
  * @param {string} options.type
- * @param {Logger} logger
+ * @param {import('../Logger')} logger
  */
 module.exports.initialize = (options, logger) => {
   if (devices[options.type]) {

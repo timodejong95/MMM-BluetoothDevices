@@ -96,7 +96,7 @@ Module.register('MMM-BluetoothDevices', {
     const { time } = device.data;
 
     // stop previous hider
-    if (this.hiders.hasOwnProperty(deviceKey)) {
+    if (this.hiders[deviceKey]) {
       clearInterval(this.hiders[deviceKey]);
     }
 

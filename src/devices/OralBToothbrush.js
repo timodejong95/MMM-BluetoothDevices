@@ -1,7 +1,6 @@
 'use strict';
 
 const Device = require('../Device');
-const Logger = require('../Logger');
 const UnknownError = require('../errors/UnknownError');
 
 const SECTORS = {
@@ -53,7 +52,7 @@ class OralBToothbrush extends Device {
    * @param {object} options
    * @param {string} options.name
    * @param {string} options.mac
-   * @param {Logger} logger
+   * @param {import('../Logger')} logger
    */
   constructor(options, logger) {
     super(options, logger);
@@ -119,11 +118,11 @@ class OralBToothbrush extends Device {
 
   shouldReconnect() {
     return this.tracks.includes(this.BATTERY_TRACK_KEY)
-        && this.iFace
-        && !this.connected // only if the devices is not connected
-        && this.data.time < 5 // only at the beginning of the brush session
-        && this.initialized
-        && !this.reconnecting;
+      && this.iFace
+      && !this.connected // only if the devices is not connected
+      && this.data.time < 5 // only at the beginning of the brush session
+      && this.initialized
+      && !this.reconnecting;
   }
 
   /**
@@ -132,7 +131,7 @@ class OralBToothbrush extends Device {
   handleNotificationForDevice(props) {
     super.handleNotificationForDevice(props);
 
-    if (props.hasOwnProperty(this.BATTERY_PATH)) {
+    if (props[this.BATTERY_PATH]) {
       this.data.battery = props[this.BATTERY_PATH][0];
       this.logger.debug(`battery updated to: ${this.data.battery}% for: ${this.name}`);
 
@@ -141,53 +140,52 @@ class OralBToothbrush extends Device {
   }
 
   watchCharacteristics() {
-    super.watchCharacteristics().then(() => new Promise((resolve, reject) => {
-      if (!this.tracks.includes(this.BATTERY_TRACK_KEY)) {
-        return resolve();
-      }
+    super.watchCharacteristics()
+      .then(() => new Promise((resolve, reject) => {
+        if (!this.tracks.includes(this.BATTERY_TRACK_KEY)) {
+          resolve();
+        } else if (this.characteristicsByUUID[this.BATTERY_UUID]) {
+          const characteristicsInterface = this.characteristicsByUUID[this.BATTERY_UUID];
 
-      if (this.characteristicsByUUID.hasOwnProperty(this.BATTERY_UUID)) {
-        const characteristicsInterface = this.characteristicsByUUID[this.BATTERY_UUID];
-
-        // Enable notifications
-        characteristicsInterface.Notifying((err, notifying) => {
-          if (notifying === false) {
-            characteristicsInterface.StartNotify(() => {
-              characteristicsInterface.ReadValue({}, (exception, value) => {
-                if (exception) {
-                  reject(new UnknownError({
-                    troubleshooting: 'devices#characteristics',
-                    exception: new Error(exception),
-                    extra: {
-                      device: this,
-                    },
-                  }));
-                } else {
-                  this.data.battery = value[0];
-                  this.emit('update', this.data);
-                  resolve();
-                }
+          // Enable notifications
+          characteristicsInterface.Notifying((err, notifying) => {
+            if (notifying === false) {
+              characteristicsInterface.StartNotify(() => {
+                characteristicsInterface.ReadValue({}, (exception, value) => {
+                  if (exception) {
+                    reject(new UnknownError({
+                      troubleshooting: 'devices#characteristics',
+                      exception: new Error(exception),
+                      extra: {
+                        device: this,
+                      },
+                    }));
+                  } else {
+                    this.data.battery = value[0];
+                    this.emit('update', this.data);
+                    resolve();
+                  }
+                });
               });
-            });
-          } else {
-            resolve();
-          }
-        });
-      } else {
-        reject(new UnknownError({
-          troubleshooting: 'devices#characteristics',
-          exception: new Error('battery characteristics not found'),
-          extra: {
-            device: this,
-          },
-        }));
-      }
-    }));
+            } else {
+              resolve();
+            }
+          });
+        } else {
+          reject(new UnknownError({
+            troubleshooting: 'devices#characteristics',
+            exception: new Error('battery characteristics not found'),
+            extra: {
+              device: this,
+            },
+          }));
+        }
+      }));
   }
 
   destroy() {
-    return new Promise((resolve, reject) => {
-      if (this.initialized && this.characteristicsByUUID.hasOwnProperty(this.BATTERY_UUID)) {
+    return new Promise((resolve) => {
+      if (this.initialized && this.characteristicsByUUID[this.BATTERY_UUID]) {
         const characteristicsInterface = this.characteristicsByUUID[this.BATTERY_UUID];
 
         characteristicsInterface.Notifying((err, notifying) => {

@@ -1,5 +1,8 @@
 'use strict';
 
+/* eslint-disable no-console */
+
+// eslint-disable-next-line import/no-unresolved
 const NodeHelper = require('node_helper');
 const hub = require('./src');
 

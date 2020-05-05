@@ -1,11 +1,10 @@
 'use strict';
 
 const UnknownError = require('../errors/UnknownError');
-const Logger = require('../Logger');
 
 class CurrentTimeService {
   /**
-   * @param {Logger} logger
+   * @param {import('../Logger')} logger
    * @param {object} options
    * @param {string} options.hci
    * @param {string|null} options.serviceName
@@ -127,18 +126,22 @@ class CurrentTimeService {
             } else {
               this.gattManagerInterface = gattManagerInterface;
 
-              this.gattManagerInterface.RegisterApplication(this.serviceNameInDBusNotation, [], (e) => {
-                e = Array.isArray(e) ? e.join('.') : e;
+              this.gattManagerInterface.RegisterApplication(
+                this.serviceNameInDBusNotation,
+                [],
+                (e) => {
+                  e = Array.isArray(e) ? e.join('.') : e;
 
-                if (e) {
-                  reject(new UnknownError({
-                    troubleshooting: 'services',
-                    exception: e,
-                  }));
-                } else {
-                  resolve();
-                }
-              });
+                  if (e) {
+                    reject(new UnknownError({
+                      troubleshooting: 'services',
+                      exception: e,
+                    }));
+                  } else {
+                    resolve();
+                  }
+                },
+              );
             }
           });
         }
@@ -148,16 +151,19 @@ class CurrentTimeService {
 
   destroy() {
     return new Promise((resolve, reject) => {
-      this.gattManagerInterface.UnregisterApplication(this.serviceNameInDBusNotation, (exception) => {
-        if (exception) {
-          reject(new UnknownError({
-            troubleshooting: 'services#destroy',
-            exception,
-          }));
-        } else {
-          this.bus.releaseName(this.serviceName, resolve);
-        }
-      });
+      this.gattManagerInterface.UnregisterApplication(
+        this.serviceNameInDBusNotation,
+        (exception) => {
+          if (exception) {
+            reject(new UnknownError({
+              troubleshooting: 'services#destroy',
+              exception,
+            }));
+          } else {
+            this.bus.releaseName(this.serviceName, resolve);
+          }
+        },
+      );
     });
   }
 }

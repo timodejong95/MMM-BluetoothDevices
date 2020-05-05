@@ -2,7 +2,6 @@
 
 const xml2js = require('xml2js');
 const Eventable = require('./Eventable');
-const Logger = require('./Logger');
 const UnknownError = require('./errors/UnknownError');
 
 class Device extends Eventable {
@@ -12,7 +11,7 @@ class Device extends Eventable {
    * @param {string} options.mac
    * @param {number|null} options.servicesResolvedTimeout
    * @param {array|null} options.tracks
-   * @param {Logger} logger
+   * @param {import('Logger')} logger
    */
   constructor(options, logger) {
     super();
@@ -59,10 +58,12 @@ class Device extends Eventable {
     }
   }
 
+  // eslint-disable-next-line no-unused-vars
   handleAdvertisingForDevice(props) {
     //
   }
 
+  // eslint-disable-next-line no-unused-vars
   handleNotificationForDevice(props) {
     //
   }
@@ -95,9 +96,10 @@ class Device extends Eventable {
         tries += 1;
         this.logger.log(`trying to connect to: ${this.name} ${tries}/${maxTries}`);
 
+        // eslint-disable-next-line no-use-before-define
         connect()
           .then((response) => resolve(response))
-          .catch((exception) => reject(exception));
+          .catch((e) => reject(e));
       } else {
         reject(exception || new UnknownError({
           troubleshooting: 'devices#could-not-connect',
@@ -173,6 +175,7 @@ class Device extends Eventable {
     return new Promise(async (resolve, reject) => {
       this.logger.debug(`waiting for services to be resolved for: ${this.name}`);
 
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         if (this.servicesResolved === true) {
           return resolve(true);
@@ -185,38 +188,41 @@ class Device extends Eventable {
           }));
         }
 
+        // eslint-disable-next-line no-await-in-loop
         await new Promise((r) => setTimeout(r, 100));
       }
     });
   }
 
   mapServices() {
-    return new Promise(async (resolve, reject) => {
-      if (this.services.length === 0) {
-        return resolve();
-      }
+    if (this.services.length === 0) {
+      return new Promise((resolve) => resolve());
+    }
 
+    return new Promise(async (resolve, reject) => {
       let introspect;
 
       try {
         introspect = await this.getDeviceInterfaceIntrospect(this.path);
       } catch (exception) {
-        return reject(exception);
+        reject(exception);
       }
 
-      const services = introspect.node.node.map((value) => value.$.name);
-      const promises = [];
+      if (introspect) {
+        const services = introspect.node.node.map((value) => value.$.name);
+        const promises = [];
 
-      for (const serviceName of services) {
-        if (this.services.includes(serviceName)) {
-          const servicePath = `${this.path}/${serviceName}`;
-          promises.push(this.mapService(servicePath));
+        for (const serviceName of services) {
+          if (this.services.includes(serviceName)) {
+            const servicePath = `${this.path}/${serviceName}`;
+            promises.push(this.mapService(servicePath));
+          }
         }
-      }
 
-      Promise.all(promises)
-        .then((response) => resolve(response))
-        .catch((exception) => reject(exception));
+        Promise.all(promises)
+          .then((response) => resolve(response))
+          .catch((exception) => reject(exception));
+      }
     });
   }
 
@@ -226,22 +232,24 @@ class Device extends Eventable {
       try {
         introspect = await this.getDeviceInterfaceIntrospect(path);
       } catch (exception) {
-        return reject(exception);
+        reject(exception);
       }
 
-      const characteristics = introspect.node.node.map((value) => value.$.name);
-      const promises = [];
+      if (introspect) {
+        const characteristics = introspect.node.node.map((value) => value.$.name);
+        const promises = [];
 
-      for (const characteristicName of characteristics) {
-        if (this.characteristics.includes(characteristicName)) {
-          const characteristicsPath = `${path}/${characteristicName}`;
-          promises.push(this.mapCharacteristic(characteristicsPath));
+        for (const characteristicName of characteristics) {
+          if (this.characteristics.includes(characteristicName)) {
+            const characteristicsPath = `${path}/${characteristicName}`;
+            promises.push(this.mapCharacteristic(characteristicsPath));
+          }
         }
-      }
 
-      Promise.all(promises)
-        .then((response) => resolve(response))
-        .catch((exception) => reject(exception));
+        Promise.all(promises)
+          .then((response) => resolve(response))
+          .catch((exception) => reject(exception));
+      }
     });
   }
 
@@ -251,29 +259,31 @@ class Device extends Eventable {
       try {
         characteristicInterface = await this.getDeviceInterface(path, 'org.bluez.GattCharacteristic1');
       } catch (exception) {
-        return reject(exception);
+        reject(exception);
       }
 
-      characteristicInterface.UUID((exception, uuid) => {
-        if (exception) {
-          reject(new UnknownError({
-            troubleshooting: 'devices#service-characteristic-interface',
-            exception,
-            extra: {
-              device: this,
-            },
-          }));
-        } else {
-          this.characteristicsByUUID[uuid] = characteristicInterface;
-          this.handlesByUUID[uuid] = path;
-          resolve();
-        }
-      });
+      if (characteristicInterface) {
+        characteristicInterface.UUID((exception, uuid) => {
+          if (exception) {
+            reject(new UnknownError({
+              troubleshooting: 'devices#service-characteristic-interface',
+              exception,
+              extra: {
+                device: this,
+              },
+            }));
+          } else {
+            this.characteristicsByUUID[uuid] = characteristicInterface;
+            this.handlesByUUID[uuid] = path;
+            resolve();
+          }
+        });
+      }
     });
   }
 
   watchCharacteristics() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       resolve();
     });
   }
@@ -316,11 +326,11 @@ class Device extends Eventable {
             }));
           } else {
             const parser = new xml2js.Parser();
-            parser.parseString(result, (e, result) => {
+            parser.parseString(result, (e, r) => {
               if (e) {
                 reject(e);
               } else {
-                resolve(result);
+                resolve(r);
               }
             });
           }
@@ -331,7 +341,7 @@ class Device extends Eventable {
   destroy() {
     return new Promise((resolve, reject) => {
       this.getDeviceInterface(this.path)
-        .then((deviceInterface) => new Promise((res, rej) => {
+        .then((deviceInterface) => new Promise((res) => {
           deviceInterface.Disconnect(() => res());
         }))
         .then(() => resolve())
