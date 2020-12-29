@@ -42,7 +42,6 @@ If your running MagicMirror in [docker](https://docs.magicmirror.builders/gettin
 | mode | String | `le` | |
 | hci | String | `hci0` | which hci adapter to use, run `hciconfig` to see your available hci adapters |
 | interfaceName | String | `org.bluez.Adapter1` | the bluetooth adapter name to take |
-| hideAfter | Number | `600` | the time in seconds when a device should hide |
 | debugLogs | Boolean | `false` | enable debug logging |
 | services | Array | `{ type: "CurrentTimeService" }` | bluetooth GATT services |
 | services.type | String | | the service name, see [services](#services) |
@@ -56,6 +55,7 @@ If your running MagicMirror in [docker](https://docs.magicmirror.builders/gettin
 | devices[].tracks[] | String | | the track key, see [devices tracks](#devices) |
 | devices[].servicesResolvedTimeout | String | `15000` | the amount of milliseconds to wait for the devices to resolve the services |
 | layout | Object | | |
+| layout.hideAfter | Number | `600` | the time in seconds when a device should hide |
 | layout.title | Object | | |
 | layout.title.position | String | `bottom` | either `top` or `bottom` |
 | layout.title.key | String | `name` | the key of the [device data](#devices) to show |
